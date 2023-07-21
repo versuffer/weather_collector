@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import create_engine
 
 from datetime import datetime
 
@@ -16,9 +17,11 @@ from sqlalchemy.sql import func
 
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
 
-engine = create_engine(DATABASE_URL)
+import os
 
-session = sessionmaker(engine=engine)
+engine = create_engine(os.environ.get("DATABASE_URL"))
+
+Session = sessionmaker(engine=engine)
 
 
 class Base(DeclarativeBase):
