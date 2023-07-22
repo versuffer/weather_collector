@@ -28,12 +28,17 @@ async def get_forecast(
 async def weather_collector():
     async with aiohttp.ClientSession() as session:
         coroutine_list = []
-        for lat, lon in DatabaseTools.get_coordinates():
+        city_credentials = DatabaseTools.get_city_credentials()
+        for _, lat, lon in city_credentials:
             coroutine_list.append(get_forecast(session, lat, lon, API_KEY))
 
         result_list = await asyncio.gather(*coroutine_list)
-        for result in result_list:
-            print(result.get("list"))
+        DatabaseTools.load_weather_data(
+            {
+                city_credentials[index]: result_list[index]
+                for index in range(len(city_credentials))
+            }
+        )
 
 
 @celery_app.task(name="fetch_forecasts", ignore_result=True)

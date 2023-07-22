@@ -2,20 +2,18 @@ import csv
 import os
 from datetime import datetime
 
+from services.json_parsing import ParsingTools
 from sqlalchemy import UniqueConstraint, create_engine, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
-    sessionmaker,
-)
+from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 from sqlalchemy.sql import func
 
 engine = create_engine(os.environ.get("DATABASE_URL"))
 
 Session = sessionmaker(bind=engine)
+
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 
 
 class Base(DeclarativeBase):
@@ -26,37 +24,38 @@ class City(Base):
     __tablename__ = "cities"
     __table_args__ = (UniqueConstraint("lat", "lon", name="unique_location"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    lat: Mapped[float] = mapped_column(nullable=False)
-    lon: Mapped[float] = mapped_column(nullable=False)
-    name: Mapped[str] = mapped_column(nullable=False)
-    country: Mapped[str] = mapped_column(nullable=True)
+    id = Column(Integer, primary_key=True)
+    lat = Column(Float, nullable=False)
+    lon = Column(Float, nullable=False)
+    name = Column(String, nullable=False)
+    country = Column(String, nullable=True)
 
-    forecasts: Mapped[list["Forecast"]] = relationship(back_populates="city")
+    forecasts = relationship("Forecast", back_populates="city")
 
 
 class Forecast(Base):
     __tablename__ = "forecasts"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    time_fetched: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
-    )
+    id = Column(Integer, primary_key=True)
+    time_fetched = Column(DateTime, nullable=False, server_default=func.now())
 
-    city: Mapped["City"] = relationship(back_populates="forecasts")
-    measurements: Mapped[list["Measurement"]] = relationship(back_populates="forecast")
+    city_id = Column(Integer, ForeignKey("cities.id"))
+    city = relationship("City", back_populates="forecasts")
+
+    measurements = relationship("Measurement", back_populates="forecast")
 
 
 class Measurement(Base):
     __tablename__ = "measurements"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    time_measured: Mapped[datetime] = mapped_column(nullable=False)
-    temperature: Mapped[float] = mapped_column(nullable=True)
-    humidity: Mapped[float] = mapped_column(nullable=True)
-    wind_speed: Mapped[float] = mapped_column(nullable=True)
+    id = Column(Integer, primary_key=True)
+    time_measured = Column(DateTime, nullable=False)
+    temperature = Column(Float, nullable=True)
+    humidity = Column(Float, nullable=True)
+    wind_speed = Column(Float, nullable=True)
 
-    forecast: Mapped["Forecast"] = relationship(back_populates="measurements")
+    forecast_id = Column(Integer, ForeignKey("forecasts.id"))
+    forecast = relationship("Forecast", back_populates="measurements")
 
 
 class DatabaseTools:
@@ -99,8 +98,39 @@ class DatabaseTools:
                 print("Cities table successfully loaded to database.")
 
     @staticmethod
-    def get_coordinates() -> list[tuple[float, float]]:
+    def get_city_credentials() -> list:
         with Session() as session:
             cities_table = Base.metadata.tables[City.__tablename__]
-            select_lat_lon = select(cities_table.c.lat, cities_table.c.lon)
-            return session.execute(select_lat_lon)
+            select_lat_lon = select(
+                cities_table.c.id, cities_table.c.lat, cities_table.c.lon
+            )
+            return session.execute(select_lat_lon).fetchall()
+
+    @staticmethod
+    def load_weather_data(result_dict: dict) -> None:
+        with Session() as session:
+            for city_credentials, result in result_dict.items():
+                if result and (measurements_list := result.get("list")):
+                    msr_objects = []
+
+                    forecast_object = Forecast(city_id=city_credentials[0])
+
+                    for measurement in measurements_list:
+                        msr_object = Measurement(
+                            time_measured=datetime.fromtimestamp(measurement.get("dt")),
+                            temperature=ParsingTools.get_single_match_value(
+                                measurement, "$.main.temp"
+                            ),
+                            humidity=ParsingTools.get_single_match_value(
+                                measurement, "$.main.humidity"
+                            ),
+                            wind_speed=ParsingTools.get_single_match_value(
+                                measurement, "$.wind.speed"
+                            ),
+                            forecast=forecast_object,
+                        )
+                        msr_objects.append(msr_object)
+
+                    session.add(forecast_object)
+                    session.add_all(msr_objects)
+            session.commit()
