@@ -41,9 +41,12 @@ services:
     command: celery -A worker.celery_app worker --loglevel=info
 
     depends_on:
-      - redis
-      - postgres
       - collector
+
+  collector-scheduler:
+    <<: *default-collector-service
+    container_name: collector-scheduler
+    command: celery -A worker.celery_app beat
 
   postgres:
     image: postgres:latest
