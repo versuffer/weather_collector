@@ -8,7 +8,7 @@ celery_app.conf.broker_url = os.environ.get("CELERY_BROKER_URL")
 celery_app.conf.beat_schedule = {
     'print_hello': {
         'task': 'print_hello',
-        'schedule': 2.0,
+        'schedule': 10.0,
     },
 }
 celery_app.conf.timezone = 'UTC'

@@ -1,4 +1,4 @@
-﻿name;lat;lng;country
+﻿name;lat;lon;country
 Tokyo;35.6897;139.6922;Japan
 Jakarta;-6.175;106.8275;Indonesia
 Delhi;28.61;77.23;India
@@ -20,8 +20,6 @@ Moscow;55.7558;37.6178;Russia
 Buenos Aires;-34.5997;-58.3819;Argentina
 Istanbul;41.0136;28.955;Turkey
 Karachi;24.86;67.01;Pakistan
-Bangalore;2881735,00;77.5917;India
-Ho Chi Minh City;2139136,00;106.7019;Vietnam
 Osaka;34.6939;135.5022;Japan
 Chengdu;30.66;104.0633;China
 Tehran;35.6892;51.3889;Iran

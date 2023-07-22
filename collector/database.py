@@ -21,7 +21,7 @@ import os
 
 engine = create_engine(os.environ.get("DATABASE_URL"))
 
-Session = sessionmaker(engine=engine)
+Session = sessionmaker(bind=engine)
 
 
 class Base(DeclarativeBase):
