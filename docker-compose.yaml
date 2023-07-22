@@ -6,30 +6,44 @@ x-default-environment: &default-environment
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
   POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
   POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+  REDIS_HOST: ${REDIS_HOST:-redis}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+
+x-default-collector-service: &default-collector-service
+  image: collector-service
+  build: ./collector
+
+  environment:
+    <<: *default-environment
+    DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    CELERY_BROKER_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
+
+  depends_on:
+    - postgres
+    - redis
 
 services:
 
   collector:
+    <<: *default-collector-service
     container_name: collector
-    image: collector-service
-    build:
-      context: collector
-
     hostname: ${COLLECTOR_HOST:-collector}
     ports:
       - ${COLLECTOR_PORT:-8080}:8000
 
-    environment:
-      <<: *default-environment
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-
-    depends_on:
-      - postgres
-
     volumes:
       - "collector_data:/data"
 
-    command: uvicorn main:app --port 8000
+    command: uvicorn main:app --host 0.0.0.0 --reload
+
+  collector-worker:
+    <<: *default-collector-service
+    command: celery -A worker.celery_app worker --loglevel=info
+
+    depends_on:
+      - redis
+      - postgres
+      - collector
 
   postgres:
     image: postgres:latest
@@ -45,6 +59,18 @@ services:
     volumes:
       - "pg_data:/data"
 
+  redis:
+    image: redis:latest
+    container_name: redis
+
+    hostname: ${REDIS_HOST:-redis}
+    ports:
+      - ${REDIS_PORT:-6379}:6379
+
+    volumes:
+      - "redis_data:/data"
+
 volumes:
   collector_data:
   pg_data:
+  redis_data:
