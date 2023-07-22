@@ -26,6 +26,7 @@ async def get_forecast(
 
 
 async def weather_collector():
+    # Asynchronously fetching data from OpenWeatherMap service
     async with aiohttp.ClientSession() as session:
         coroutine_list = []
         city_credentials = DatabaseTools.get_city_credentials()
@@ -33,12 +34,14 @@ async def weather_collector():
             coroutine_list.append(get_forecast(session, lat, lon, API_KEY))
 
         result_list = await asyncio.gather(*coroutine_list)
-        DatabaseTools.load_weather_data(
-            {
-                city_credentials[index]: result_list[index]
-                for index in range(len(city_credentials))
-            }
-        )
+
+    # Synchronously loading fetched data to postgres
+    DatabaseTools.load_weather_data(
+        {
+            city_credentials[index]: result_list[index]
+            for index in range(len(city_credentials))
+        }
+    )
 
 
 @celery_app.task(name="fetch_forecasts", ignore_result=True)

@@ -2,7 +2,7 @@ import csv
 import os
 from datetime import datetime
 
-from services.json_parsing import ParsingTools
+from services.parsing import ParsingTools
 from sqlalchemy import UniqueConstraint, create_engine, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
@@ -60,11 +60,11 @@ class Measurement(Base):
 
 class DatabaseTools:
     @staticmethod
-    def load_schema():
+    def load_schema() -> None:
         Base.metadata.create_all(bind=engine)
 
     @staticmethod
-    def load_cities():
+    def load_cities() -> None:
         with open("data/cities.csv", "r") as cities_csv:
             reader = csv.reader(cities_csv, delimiter=";")
             cities_table = Base.metadata.tables[City.__tablename__]
@@ -133,4 +133,5 @@ class DatabaseTools:
 
                     session.add(forecast_object)
                     session.add_all(msr_objects)
+
             session.commit()

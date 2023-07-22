@@ -1,6 +1,9 @@
 version: "3.8"
 
 x-default-environment: &default-environment
+  POSTGRES_DB: ${POSTGRES_DB:-collector_db}
+  POSTGRES_USER: ${POSTGRES_USER:-collector}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
   POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
   POSTGRES_PORT: ${POSTGRES_PORT:-5432}
   REDIS_HOST: ${REDIS_HOST:-redis}
