@@ -74,7 +74,7 @@ Additional information
 
 Application bottlenecks
 ----------------------
-1. First `fetch_forecasts()` task execution is bound to `collector-worker` service startup but not to `collector` service startup that means that several workers creates *duplicated tasks* on startup;
+1. First `fetch_forecasts()` task execution is bound to `collector-worker` service startup but not to `collector` service startup that means that several workers create *duplicated tasks* on startup;
 2. Fetched weather data got from OpenWeatherMap API is temporarily stored in `result_dict` that may cause memory leak when monitoring too many cities;
 3. `load_cities` is a hardcode that should be rewritten with ***interface*** for getting city data not only from pre-build `.csv` but also from `.xlsx` and other sources like `.txt`, `.xml` and external service APIs if needed;
 4. Application has no API-method for getting data from database;
