@@ -1,23 +1,9 @@
 from datetime import datetime
 
-from jsonpath_ng import parse
 from models.database import Forecast, Measurement
 
 
 class ParsingTools:
-    @staticmethod
-    def _get_match_list(data: dict, expression: str) -> list | None:
-        parser = parse(expression)
-        if (match_list := parser.find(data)) != []:
-            return match_list
-
-    @classmethod
-    def get_single_match_value(
-        cls, data: dict, expression: str
-    ) -> int | float | str | list | dict | None:
-        if match_list := cls._get_match_list(data, expression):
-            return match_list[0].value
-
     @staticmethod
     def parse_weather_data(
         result_dict: dict,
@@ -30,17 +16,26 @@ class ParsingTools:
                 forecast_object = Forecast(city_id=city_credentials[0])
 
                 for measurement in measurements:
+                    time_measured = None
+                    temperature = None
+                    humidity = None
+                    wind_speed = None
+
+                    if dt := measurement.get("dt"):
+                        time_measured = datetime.fromtimestamp(dt)
+
+                    if main := measurement.get("main"):
+                        temperature = main.get("temp")
+                        humidity = main.get("humidity")
+
+                    if wind := measurement.get("wind"):
+                        wind_speed = wind.get("speed")
+
                     msr_object = Measurement(
-                        time_measured=datetime.fromtimestamp(measurement.get("dt")),
-                        temperature=ParsingTools.get_single_match_value(
-                            measurement, "$.main.temp"
-                        ),
-                        humidity=ParsingTools.get_single_match_value(
-                            measurement, "$.main.humidity"
-                        ),
-                        wind_speed=ParsingTools.get_single_match_value(
-                            measurement, "$.wind.speed"
-                        ),
+                        time_measured=time_measured,
+                        temperature=temperature,
+                        humidity=humidity,
+                        wind_speed=wind_speed,
                         forecast=forecast_object,
                     )
                     measurements_list.append(msr_object)

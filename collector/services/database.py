@@ -48,7 +48,6 @@ class DatabaseTools:
                     row_number += 1
 
                 await session.commit()
-                print("Cities table successfully loaded to database.")
 
     @staticmethod
     async def get_city_credentials() -> list:

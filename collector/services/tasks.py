@@ -50,10 +50,10 @@ async def weather_collector():
 
 @celery_app.task(name="fetch_forecasts", ignore_result=True)
 def fetch_forecasts():
-    asyncio.run(weather_collector())
+    asyncio.get_event_loop().run_until_complete(weather_collector())
 
 
 @worker_ready.connect
-def startup_execution(sender, **kwargs):
+def fetch_forecasts_on_startup(sender, **kwargs):
     with sender.app.connection() as conn:
         sender.app.send_task("fetch_forecasts")
