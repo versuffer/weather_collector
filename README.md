@@ -1,6 +1,6 @@
 Weather Collector
 ================================
-Weather Collector is as service that fetches weather data for 50 biggest cities in the world from https://api.openweathermap.org.
+Weather Collector is a service that fetches weather data for 50 biggest cities in the world from https://api.openweathermap.org.
 
 Installation
 ------------
@@ -30,7 +30,7 @@ Exploitation
 
     docker compose stop
 
-**To check all application service logs use this command:**
+**To check all application services logs use this command:**
 
     docker compose logs -f
 
