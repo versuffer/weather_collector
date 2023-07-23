@@ -11,13 +11,13 @@ app = FastAPI(
 
 
 @app.on_event("startup")
-def load_schema():
-    DatabaseTools.load_schema()
+async def init_db():
+    await DatabaseTools.init_db()
 
 
 @app.on_event("startup")
-def load_cities():
-    DatabaseTools.load_cities()
+async def load_cities():
+    await DatabaseTools.load_cities()
 
 
 @app.get("/", include_in_schema=False)

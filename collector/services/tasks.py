@@ -4,15 +4,16 @@ import os
 import aiohttp
 from celery import Celery
 from celery.signals import worker_ready
-from config import API_KEY, BEAT_SCHEDULE
+from config import Config
 from services.database import DatabaseTools
+from services.parsing import ParsingTools
 
 celery_app = Celery(__name__)
 celery_app.conf.broker_url = os.environ.get("CELERY_BROKER_URL")
-celery_app.conf.beat_schedule = BEAT_SCHEDULE
+celery_app.conf.beat_schedule = Config.BEAT_SCHEDULE
 
 
-async def get_forecast(
+async def fetch_forecast(
     session: aiohttp.ClientSession, lat: float, lon: float, api_key: str
 ) -> dict | None:
     async with session.get(
@@ -26,22 +27,25 @@ async def get_forecast(
 
 
 async def weather_collector():
-    # Asynchronously fetching data from OpenWeatherMap service
+    # Asynchronously fetching weather data from api.openweathermap.org
     async with aiohttp.ClientSession() as session:
         coroutine_list = []
-        city_credentials = DatabaseTools.get_city_credentials()
+        city_credentials = await DatabaseTools.get_city_credentials()
         for _, lat, lon in city_credentials:
-            coroutine_list.append(get_forecast(session, lat, lon, API_KEY))
+            coroutine_list.append(fetch_forecast(session, lat, lon, Config.API_KEY))
 
         result_list = await asyncio.gather(*coroutine_list)
 
-    # Synchronously loading fetched data to postgres
-    DatabaseTools.load_weather_data(
-        {
-            city_credentials[index]: result_list[index]
-            for index in range(len(city_credentials))
-        }
-    )
+    result_dict = {
+        city_credentials[index]: result_list[index]
+        for index in range(len(city_credentials))
+    }
+
+    # Parsing weather data
+    forecasts, measurements = ParsingTools.parse_weather_data(result_dict)
+
+    # Saving weather data to database
+    await DatabaseTools.save_weather_data(forecasts, measurements)
 
 
 @celery_app.task(name="fetch_forecasts", ignore_result=True)

@@ -15,7 +15,7 @@ x-default-collector-service: &default-collector-service
 
   environment:
     <<: *default-environment
-    DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-collector}:${POSTGRES_PASSWORD:-password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT-5432}/${POSTGRES_DB:-collector_db}
+    DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-collector}:${POSTGRES_PASSWORD:-password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT-5432}/${POSTGRES_DB:-collector_db}
     CELERY_BROKER_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/0
 
   depends_on:
