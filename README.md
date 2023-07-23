@@ -52,3 +52,35 @@ Additional information
 1. Application always starts fetching data right after launching and then do it with 1 hour interval;
 2. You can find database schema information in `data/schema.png` or `data/schema.sql`;
 3. `data/cities.csv` contains cities data that loads to database on every application startup.
+4. List of used technologies, libraries and frameworks:
+- `FastAPI` - web-framefork;
+- `Uvicorn` - ASGI web-server;
+- `Celery` (`worker` + `beat`) - task queue + scheduler;
+- `PostgreSQL` - database management system;
+- `Redis` - broker for `Celery`;
+- `asyncio` - async programming library;
+- `asyncpg` - `PostgreSQL` async driver;
+- `SQLAlchemy` - database ORM;
+- `docker [compose]` - as containerization system.
+5. Listed technologies were chosen to satisfy these application demands:
+- horizontal scalability - `Celery` and `Redis`;
+- async http-requests support - `asyncio` + `FastAPI` + `Uvicorn` + `asyncpg` (`asyncpg` is not used for async operations yet);
+- reliable data storage - `PostgreSQL`;
+- flexible ORM that works with any framework - `SQLAlchemy`;
+- application must be easily deployed on any environment - `docker [compose]`  
+
+6. Database schema was chosen to provide further scaling with additional weather parameters without need of duplicating data from one table to another (`normalization`).
+
+Application bottlenecks
+----------------------
+1. First `fetch_forecasts()` task execution is bound to `collector-worker` service startup but not to `collector` service startup that means when several workers will make *duplicated tasks*;
+2. Fetched weather data got from OpenWeatherMap API is temporarily stored in `result_dict` that may cause memory leak when monitoring too many cities;
+3. `load_cities` is a hardcode that should be rewritten with ***interface*** for getting city data not only from pre-build `.csv` but also from `.xlsx` and other sources like `.txt`, `.xml` and external service APIs if needed;
+4. Application has no API-method for getting data from database;
+5. Application has no management commands for starting / stopping / rescheduling tasks.
+
+TO DO
+----------------------
+1. Add migrations management with `Alembic`;
+2. Reconfigure task scheduling;
+3. Rewrite `load_cities`;
