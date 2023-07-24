@@ -85,3 +85,6 @@ TO DO
 1. Add migrations management with `Alembic`;
 2. Reconfigure task scheduling;
 3. Rewrite `load_cities`;
+4. Add logging;
+5. Add basis unit-tests;
+6. Add task monitoring with `Flower`.
